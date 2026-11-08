@@ -68,13 +68,27 @@ irm https://raw.githubusercontent.com/yorumicolors/powershell/main/install.ps1 |
 
 From a checkout, `./install.ps1` works the same on Windows, macOS and Linux.
 
+On macOS and Linux the bash entry point finds `pwsh`, warns when it predates 7.2, and passes the
+flags through:
+
+```sh
+./install.sh --flavour kraken
+./install.sh --flavour bifrost --profile ~/.config/powershell/profile.ps1
+./install.sh --no-profile --destination ~/.local/share/yorumi
+```
+
+It needs PowerShell on `PATH` (`brew install --cask powershell` on macOS, the package manager
+package on Linux) and says so with the commands when it is missing.
+
 ## What the installer writes
 
 Two things, and the theme itself is never written into your profile:
 
 1. `yorumi.ps1` — the whole port, all seven flavours, one file.
    Windows: `%APPDATA%\yorumi\yorumi.ps1`, elsewhere `~/.config/yorumi/yorumi.ps1`.
-2. **one entry** in your profile (`$PROFILE.CurrentUserAllHosts` by default):
+2. **one entry** in your profile (`$PROFILE.CurrentUserAllHosts` by default — 
+   `%USERPROFILE%\Documents\PowerShell\profile.ps1` on Windows,
+   `~/.config/powershell/profile.ps1` on macOS and Linux):
 
 ```powershell
 # >>> yorumi >>>
@@ -99,7 +113,11 @@ the entry line itself.
 
 ## Notes
 
-- `$PSStyle` needs PowerShell 7.2+. Windows PowerShell 5.1 gets the PSReadLine colours only.
+- `$PSStyle` needs PowerShell 7.2+ — on every platform. Windows PowerShell 5.1 and PowerShell
+  6.x get the PSReadLine colours only; nothing errors.
+- Linux and macOS are first-class here: the same script, the same seven flavours, at
+  `~/.config/yorumi/yorumi.ps1`, profile at `~/.config/powershell/profile.ps1`. `install.sh`
+  is only a wrapper that locates `pwsh`.
 - Colours are 24-bit escapes, so they look the same in Windows Terminal, VS Code, WezTerm and
   Terminal.app — pair the shell with the terminal scheme of the same flavour so the background
   matches.

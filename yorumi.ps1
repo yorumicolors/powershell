@@ -1,11 +1,12 @@
 # yorumi for PowerShell — seven flavours of the palette, one script.
 # Generated from primitives.json + ansi-themes.json; edit dev/generators/build-terminals.mjs.
 #
-# One entry in your profile is enough:
-#   . "$env:APPDATA\yorumi\yorumi.ps1" -Flavour abyss
+# One entry in your profile is enough, and install.ps1 / install.sh write it:
+#   Windows      . "$env:APPDATA\yorumi\yorumi.ps1" -Flavour abyss
+#   macOS, Linux . "$HOME/.config/yorumi/yorumi.ps1" -Flavour abyss
 # and `Set-YorumiTheme bifrost` switches flavour for the session.
-# $PSStyle needs PowerShell 7.2+; on Windows PowerShell 5.1 only the PSReadLine
-# colours apply.
+# $PSStyle needs PowerShell 7.2+ on every platform; older hosts — Windows
+# PowerShell 5.1, PowerShell 6.x — get the PSReadLine colours only.
 
 [CmdletBinding()]
 param(
