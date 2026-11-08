@@ -71,6 +71,9 @@ if ($local -and (Test-Path -LiteralPath $local)) {
 } else {
     Invoke-WebRequest -UseBasicParsing -Uri "$rawBase/yorumi.ps1" -OutFile $scriptPath
 }
+# absolute, always: a relative path in the profile breaks the moment the shell
+# starts somewhere else
+$scriptPath = (Resolve-Path -LiteralPath $scriptPath).Path
 Write-Host "installed $scriptPath"
 
 if ($NoProfile) {
@@ -105,25 +108,43 @@ if ($lines.Count -gt 0 -and $lines[-1] -eq '') {
 }
 
 $block = @($startMarker, $entry, $endMarker)
-$start = -1
-$end = -1
-for ($i = 0; $i -lt $lines.Count; $i++) {
-    if ($lines[$i].Trim() -eq $startMarker) { $start = $i }
-    elseif ($lines[$i].Trim() -eq $endMarker -and $start -ge 0) { $end = $i; break }
+
+# One block in, one block out. An existing block is replaced where it sits, a
+# second copy of it is dropped, and a half-written block stops the write instead
+# of eating everything after it.
+$out = @()
+$placed = $false
+$inBlock = $false
+$broken = $false
+foreach ($line in $lines) {
+    $trimmed = $line.Trim()
+    if ($trimmed -eq $startMarker) {
+        if ($inBlock) { $broken = $true }
+        $inBlock = $true
+        if (-not $placed) { $out += $block; $placed = $true }
+        continue
+    }
+    if ($trimmed -eq $endMarker) {
+        if (-not $inBlock) { $broken = $true }
+        $inBlock = $false
+        continue
+    }
+    if (-not $inBlock) { $out += $line }
+}
+if ($inBlock) { $broken = $true }
+
+if ($broken) {
+    throw "yorumi: $ProfilePath has an unpaired '$startMarker' or '$endMarker' marker. The profile was not touched; the theme itself is installed at $scriptPath. Fix or remove those lines, then run this again."
 }
 
-if ($start -ge 0 -and $end -ge 0) {
-    $out = @()
-    if ($start -gt 0) { $out += $lines[0..($start - 1)] }
-    $out += $block
-    if ($end + 1 -lt $lines.Count) { $out += $lines[($end + 1)..($lines.Count - 1)] }
-} elseif ($lines -match [regex]::Escape($scriptPath)) {
+if (-not $placed -and ($lines -match [regex]::Escape($scriptPath))) {
     Write-Warning "yorumi is already dot-sourced in $ProfilePath outside the '$startMarker' block; leaving the profile alone."
     Write-Host "the script itself is updated, so nothing else is needed"
     return
-} else {
-    $out = @()
-    if ($lines.Count -gt 0) { $out += $lines; $out += '' }
+}
+
+if (-not $placed) {
+    if ($out.Count -gt 0 -and $out[-1] -ne '') { $out += '' }
     $out += $block
 }
 
