@@ -148,15 +148,24 @@ if (-not $placed) {
     $out += $block
 }
 
-if (Test-Path -LiteralPath $ProfilePath) {
-    $backup = "$ProfilePath.yorumi-backup"
-    if (-not (Test-Path -LiteralPath $backup)) {
-        Copy-Item -LiteralPath $ProfilePath -Destination $backup
-    }
-}
+$text = $out -join $newline
+if ($raw.EndsWith("`n")) { $text += $newline }
+$current = if (Test-Path -LiteralPath $ProfilePath) { [IO.File]::ReadAllText($ProfilePath) } else { $null }
 
-Set-Content -LiteralPath $ProfilePath -Value ($out -join $newline) -Encoding UTF8
-Write-Host "profile entry written to $ProfilePath"
+if ($null -ne $current -and $current.TrimEnd() -eq $text.TrimEnd()) {
+    Write-Host "profile entry already current in $ProfilePath"
+} else {
+    if ($null -ne $current) {
+        $backup = "$ProfilePath.yorumi-backup"
+        if (-not (Test-Path -LiteralPath $backup)) {
+            Copy-Item -LiteralPath $ProfilePath -Destination $backup
+        }
+    }
+    # no BOM: Windows PowerShell 5.1's -Encoding UTF8 writes one, PS 7's does not,
+    # and a profile that differs per host is not worth owning
+    [IO.File]::WriteAllText($ProfilePath, $text, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "profile entry written to $ProfilePath"
+}
 
 Write-Host ''
 Write-Host 'Next:'
