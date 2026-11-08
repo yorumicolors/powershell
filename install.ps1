@@ -100,7 +100,9 @@ $newline = if ($raw.Contains("`r`n")) { "`r`n" } else { "`n" }
 $lines = @()
 if ($raw.Length -gt 0) { $lines = $raw -split "`r?`n" }
 # a trailing newline shows up as an empty last element; drop it and re-add below
-if ($lines.Count -gt 0 -and $lines[-1] -eq '') { $lines = $lines[0..($lines.Count - 2)] }
+if ($lines.Count -gt 0 -and $lines[-1] -eq '') {
+    if ($lines.Count -eq 1) { $lines = @() } else { $lines = $lines[0..($lines.Count - 2)] }
+}
 
 $block = @($startMarker, $entry, $endMarker)
 $start = -1
