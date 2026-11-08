@@ -68,8 +68,15 @@ irm https://raw.githubusercontent.com/yorumicolors/powershell/main/install.ps1 |
 
 From a checkout, `./install.ps1` works the same on Windows, macOS and Linux.
 
-On macOS and Linux the bash entry point finds `pwsh`, warns when it predates 7.2, and passes the
-flags through:
+On macOS and Linux, pipe the bash entry point — it finds `pwsh`, warns when it predates 7.2, and
+passes flags through to the PowerShell side:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/install.sh | bash -s -- --flavour bifrost
+```
+
+From a checkout, the same script takes the flags directly:
 
 ```sh
 ./install.sh --flavour kraken
