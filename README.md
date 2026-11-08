@@ -66,7 +66,8 @@ Windows PowerShell 5.1 needs TLS 1.2 first:
 irm https://raw.githubusercontent.com/yorumicolors/powershell/main/install.ps1 | iex
 ```
 
-On macOS and Linux, `install.sh` finds `pwsh` and warns below 7.2:
+On macOS and Linux, `install.sh` finds `pwsh`, prompts for a flavour when none is given, and warns
+below 7.2:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/install.sh | bash

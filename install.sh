@@ -8,10 +8,44 @@ set -euo pipefail
 
 RAW_BASE="https://raw.githubusercontent.com/yorumicolors/powershell/main"
 FLAVOURS="ether abyss bifrost kraken kabocha cosmic ryujin"
-FLAVOUR="ether"
+FLAVOUR=""
 PROFILE=""
 DESTINATION=""
 NO_PROFILE=0
+
+# No default flavour. Ask, or fail where nobody can answer.
+ask_flavour() {
+  # a real open, not a -r test: /dev/tty exists even when nothing is attached
+  if ! { exec 3<>/dev/tty; } 2>/dev/null; then
+    echo "no flavour given. pass --flavour <name>: $FLAVOURS" >&2
+    exit 2
+  fi
+  i=0
+  {
+    echo "Yorumi flavours:"
+    for f in $FLAVOURS; do i=$((i + 1)); echo "  $i) $f"; done
+  } >&3
+  while :; do
+    printf 'flavour (1-%s or a name): ' "$i" >&3
+    answer=""
+    IFS= read -r answer <&3 || {
+      exec 3>&-
+      echo "no flavour given. pass --flavour <name>: $FLAVOURS" >&2
+      exit 2
+    }
+    [ -z "$answer" ] && continue
+    case "$answer" in
+      *[!0-9]*) candidate="$answer" ;;
+      *) candidate=""
+         n=0
+         for f in $FLAVOURS; do n=$((n + 1)); [ "$n" -eq "$answer" ] && candidate="$f"; done ;;
+    esac
+    case " $FLAVOURS " in
+      *" $candidate "*) FLAVOUR="$candidate"; exec 3>&-; return 0 ;;
+    esac
+    printf 'not a flavour: %s\n' "$answer" >&3
+  done
+}
 
 usage() {
   echo "usage: ./install.sh [--flavour <name>] [--profile <path>] [--destination <dir>] [--no-profile]"
@@ -29,10 +63,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-case " $FLAVOURS " in
-  *" $FLAVOUR "*) ;;
-  *) echo "unknown flavour '$FLAVOUR'. One of: $FLAVOURS" >&2; exit 2 ;;
-esac
+if [ -n "$FLAVOUR" ]; then
+  case " $FLAVOURS " in
+    *" $FLAVOUR "*) ;;
+    *) echo "unknown flavour '$FLAVOUR'. One of: $FLAVOURS" >&2; exit 2 ;;
+  esac
+fi
+
+[ -z "$FLAVOUR" ] && ask_flavour
 
 PWSH="$(command -v pwsh || command -v powershellcli || true)"
 if [ -z "$PWSH" ]; then

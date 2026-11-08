@@ -27,7 +27,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string] $Flavour = 'ether',
+    [string] $Flavour = '',
     [string] $Destination,
     [string] $ProfilePath,
     [switch] $NoProfile
@@ -58,6 +58,28 @@ if (-not $Destination) {
 if (-not $ProfilePath) { $ProfilePath = $PROFILE.CurrentUserAllHosts }
 
 $flavours = 'ether', 'abyss', 'bifrost', 'kraken', 'kabocha', 'cosmic', 'ryujin'
+
+# No default flavour. Ask, or fail where nobody can answer.
+if (-not $Flavour) {
+    if (-not [Environment]::UserInteractive -or [Console]::IsInputRedirected) {
+        throw "no flavour given. pass -Flavour <name>: $($flavours -join ', ')"
+    }
+    for ($i = 0; $i -lt $flavours.Count; $i++) {
+        Write-Host ("  {0}) {1}" -f ($i + 1), $flavours[$i])
+    }
+    while (-not $Flavour) {
+        $answer = Read-Host "flavour (1-$($flavours.Count) or a name)"
+        if (-not $answer) { continue }
+        if ($answer -match '^\d+$' -and [int]$answer -ge 1 -and [int]$answer -le $flavours.Count) {
+            $Flavour = $flavours[[int]$answer - 1]
+        } elseif ($flavours -contains $answer) {
+            $Flavour = $answer
+        } else {
+            Write-Warning "not a flavour: $answer"
+        }
+    }
+}
+
 if ($flavours -notcontains $Flavour) {
     throw "unknown flavour '$Flavour'. One of: $($flavours -join ', ')"
 }
