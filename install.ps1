@@ -161,4 +161,4 @@ Write-Host "profile entry written to $ProfilePath"
 Write-Host ''
 Write-Host 'Next:'
 Write-Host "  restart your shell, or:  . `"$ProfilePath`""
-Write-Host "  switch flavour:          Set-YorumiTheme abyss"
+Write-Host "  switch flavour:          Set-YorumiTheme <flavour>"
