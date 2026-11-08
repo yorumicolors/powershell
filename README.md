@@ -59,33 +59,27 @@ have no common value. This port keeps the hue and drops the fill — bold blue f
 irm https://raw.githubusercontent.com/yorumicolors/powershell/main/install.ps1 | iex
 ```
 
-Windows PowerShell 5.1 needs TLS 1.2 turned on before that line works:
+Windows PowerShell 5.1 needs TLS 1.2 first:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 irm https://raw.githubusercontent.com/yorumicolors/powershell/main/install.ps1 | iex
 ```
 
-From a checkout, `./install.ps1` works the same on Windows, macOS and Linux.
-
-On macOS and Linux, pipe the bash entry point — it finds `pwsh`, warns when it predates 7.2, and
-passes flags through to the PowerShell side:
+On macOS and Linux, `install.sh` finds `pwsh` and warns below 7.2:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/install.sh | bash
 curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/install.sh | bash -s -- --flavour bifrost
 ```
 
-From a checkout, the same script takes the flags directly:
+From a checkout:
 
 ```sh
 ./install.sh --flavour kraken
 ./install.sh --flavour bifrost --profile ~/.config/powershell/profile.ps1
 ./install.sh --no-profile --destination ~/.local/share/yorumi
 ```
-
-It needs PowerShell on `PATH` (`brew install --cask powershell` on macOS, the package manager
-package on Linux) and says so with the commands when it is missing.
 
 ## What the installer writes
 
