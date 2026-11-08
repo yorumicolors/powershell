@@ -71,15 +71,13 @@ below 7.2:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/install.sh | bash
-curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/install.sh | bash -s -- --flavour bifrost
 ```
 
-From a checkout:
+Flags travel as `-s --`:
 
 ```sh
-./install.sh --flavour kraken
-./install.sh --flavour bifrost --profile ~/.config/powershell/profile.ps1
-./install.sh --no-profile --destination ~/.local/share/yorumi
+curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/install.sh | bash -s -- --flavour bifrost
+curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/install.sh | bash -s -- --no-profile --destination ~/.local/share/yorumi
 ```
 
 ## What the installer writes
@@ -130,7 +128,7 @@ the entry line itself.
 ## For AI Agents
 
 1. **Install**: `irm https://raw.githubusercontent.com/yorumicolors/powershell/main/install.ps1 | iex`
-   (add the TLS 1.2 line first on Windows PowerShell 5.1), or `./install.ps1` in a checkout.
+   (add the TLS 1.2 line first on Windows PowerShell 5.1).
 2. **Never paste theme code into a profile.** The port is one dot-sourced entry between
    `# >>> yorumi >>>` and `# <<< yorumi <<<`; re-running the installer replaces it.
 3. **Verify**: `$PSStyle.FileInfo.Directory` must be a foreground escape
