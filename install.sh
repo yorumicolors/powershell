@@ -55,7 +55,10 @@ if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/install.ps1" ]; then
 else
   work="$(mktemp -d)"
   trap 'rm -rf "$work"' EXIT
-  curl -fsSL "$RAW_BASE/install.ps1" -o "$work/install.ps1"
+  curl -fsSL "$RAW_BASE/install.ps1" -o "$work/install.ps1" || {
+    echo "could not download $RAW_BASE/install.ps1 — offline, or the repository is private and needs a token" >&2
+    exit 1
+  }
   INSTALLER="$work/install.ps1"
 fi
 
