@@ -54,9 +54,15 @@ usage() {
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --flavour|-f)  FLAVOUR="${2:-}"; shift 2 ;;
-    --profile|-p)  PROFILE="${2:-}"; shift 2 ;;
-    --destination|-d) DESTINATION="${2:-}"; shift 2 ;;
+    --flavour|-f)
+      [ -n "${2:-}" ] || { echo "--flavour needs a flavour name. One of: $FLAVOURS" >&2; exit 2; }
+      FLAVOUR="$2"; shift 2 ;;
+    --profile|-p)
+      [ -n "${2:-}" ] || { echo "--profile needs a path" >&2; exit 2; }
+      PROFILE="$2"; shift 2 ;;
+    --destination|-d)
+      [ -n "${2:-}" ] || { echo "--destination needs a directory" >&2; exit 2; }
+      DESTINATION="$2"; shift 2 ;;
     --no-profile)  NO_PROFILE=1; shift ;;
     -h|--help)     usage; exit 0 ;;
     *) echo "unknown argument: $1" >&2; usage >&2; exit 2 ;;
@@ -94,8 +100,9 @@ else
   work="$(mktemp -d)"
   trap 'rm -rf "$work"' EXIT
   curl -fsSL "$RAW_BASE/install.ps1" -o "$work/install.ps1" || {
-    echo "could not download $RAW_BASE/install.ps1 — offline, or the repository is private and needs a token" >&2
-    exit 1
+    echo "yorumi: could not download $RAW_BASE/install.ps1" >&2
+    echo "yorumi: if that repository is not public yet, clone it and run ./install.sh from the checkout." >&2
+    exit 3
   }
   INSTALLER="$work/install.ps1"
 fi

@@ -83,6 +83,7 @@ if (-not $Flavour) {
 if ($flavours -notcontains $Flavour) {
     throw "unknown flavour '$Flavour'. One of: $($flavours -join ', ')"
 }
+if ($Flavour) { $Flavour = $Flavour.ToLower() }
 
 New-Item -ItemType Directory -Path $Destination -Force | Out-Null
 $scriptPath = Join-Path $Destination 'yorumi.ps1'
@@ -91,7 +92,17 @@ $local = if ($PSScriptRoot) { Join-Path $PSScriptRoot 'yorumi.ps1' }
 if ($local -and (Test-Path -LiteralPath $local)) {
     Copy-Item -LiteralPath $local -Destination $scriptPath -Force
 } else {
-    Invoke-WebRequest -UseBasicParsing -Uri "$rawBase/yorumi.ps1" -OutFile $scriptPath
+    # download beside the target and move it in: a failed fetch leaves nothing
+    $part = "$scriptPath.part.$PID"
+    try {
+        Invoke-WebRequest -UseBasicParsing -Uri "$rawBase/yorumi.ps1" -OutFile $part
+    } catch {
+        Remove-Item -LiteralPath $part -ErrorAction SilentlyContinue
+        Write-Host "yorumi: could not download yorumi.ps1 from $rawBase" -ForegroundColor Red
+        Write-Host "yorumi: if that repository is not public yet, clone it and run this script from the checkout." -ForegroundColor Red
+        exit 3
+    }
+    Move-Item -LiteralPath $part -Destination $scriptPath -Force
 }
 # absolute, always: a relative path in the profile breaks the moment the shell
 # starts somewhere else
@@ -185,7 +196,10 @@ if ($null -ne $current -and $current.TrimEnd() -eq $text.TrimEnd()) {
     }
     # no BOM: Windows PowerShell 5.1's -Encoding UTF8 writes one, PS 7's does not,
     # and a profile that differs per host is not worth owning
-    [IO.File]::WriteAllText($ProfilePath, $text, (New-Object System.Text.UTF8Encoding($false)))
+    # write beside the profile and move it in, so a crash cannot truncate it
+    $tmp = "$ProfilePath.yorumi-tmp.$PID"
+    [IO.File]::WriteAllText($tmp, $text, (New-Object System.Text.UTF8Encoding($false)))
+    Move-Item -LiteralPath $tmp -Destination $ProfilePath -Force
     Write-Host "profile entry written to $ProfilePath"
 }
 
