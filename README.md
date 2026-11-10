@@ -85,20 +85,37 @@ curl -fsSL https://raw.githubusercontent.com/yorumicolors/powershell/main/instal
 Two things, and the theme itself is never written into your profile:
 
 1. `yorumi.ps1` — the whole port, all seven flavours, one file.
-   Windows: `%APPDATA%\yorumi\yorumi.ps1`, elsewhere `~/.config/yorumi/yorumi.ps1`.
-2. **one entry** in your profile (`$PROFILE.CurrentUserAllHosts` by default — 
-   `%USERPROFILE%\Documents\PowerShell\profile.ps1` on Windows,
-   `~/.config/powershell/profile.ps1` on macOS and Linux):
+   Windows: `%APPDATA%\yorumi\yorumi.ps1`; elsewhere `${XDG_CONFIG_HOME:-$HOME/.config}/yorumi/yorumi.ps1`
+   (`XDG_CONFIG_HOME` counts only when absolute). `-Destination` moves it.
+2. **one entry** in whatever `$PROFILE` resolves to in the PowerShell process that runs the
+   installer — the current user's profile for the current host:
 
-```powershell
-# >>> yorumi >>>
-. "C:\Users\you\AppData\Roaming\yorumi\yorumi.ps1" -Flavour abyss
-# <<< yorumi <<<
-```
+   ```powershell
+   # >>> yorumi >>>
+   . (Join-Path $env:APPDATA 'yorumi\yorumi.ps1') -Flavour $(if ($env:YORUMI_FLAVOUR) { $env:YORUMI_FLAVOUR } else { 'abyss' })
+   # <<< yorumi <<<
+   ```
 
-Re-running the installer replaces that entry rather than adding a second one, keeps a single
-`profile.ps1.yorumi-backup`, and never touches the rest of the file. `-Flavour`, `-Destination`,
-`-ProfilePath` and `-NoProfile` are there if you want a different arrangement.
+   On macOS and Linux the first argument looks up `${XDG_CONFIG_HOME:-$HOME/.config}` at startup
+   the same way — a relative `XDG_CONFIG_HOME` is ignored there too, exactly as in the install — and
+   `-Destination` writes the absolute path you chose as a single-quoted literal instead. Nothing is
+   expanded when the entry is written: a path containing `$`, backticks or spaces is just a string to
+   the profile. A line that merely looks like a marker inside a string or here-string is left alone;
+   only a real standalone comment counts.
+
+`$PROFILE` is not one fixed path: the edition picks the directory (Windows PowerShell 5.1
+`Documents\WindowsPowerShell`, PowerShell 7 `Documents\PowerShell`), the host picks the file name
+(console `Microsoft.PowerShell_profile.ps1`, VS Code `Microsoft.VSCode_profile.ps1`), a redirected or
+OneDrive `Documents` moves it, and on macOS and Linux it sits under `~/.config/powershell`.
+`-ProfilePath <path>` writes the entry to a file you name instead — another host, another edition, or
+a dotfiles repo; `install.sh --profile <path>` passes it through.
+
+Re-running the installer removes every managed block and appends one at the end, keeps a single
+`<profile>.yorumi-backup`, and never touches the rest of the file. A nested, reversed or unclosed
+marker stops it before the profile is written; so does a literal dot-source of `yorumi.ps1` outside
+the block, which would load the theme twice — the installer names that line and leaves the file
+alone. `-Flavour`, `-Destination`, `-ProfilePath` and `-NoProfile` are there if you want a different
+arrangement.
 
 ## Usage
 
@@ -108,16 +125,17 @@ Get-YorumiTheme                 # all seven, as data
 (Get-YorumiTheme abyss).syn     # the role table
 ```
 
-Set `YORUMI_FLAVOUR` to pick the flavour the profile entry starts with, or pass `-Flavour` to
-the entry line itself.
+Set `YORUMI_FLAVOUR` in the environment to override the entry's flavour at startup; `-Flavour`
+chooses the fallback the entry uses when it is unset.
 
 ## Notes
 
 - `$PSStyle` needs PowerShell 7.2+ — on every platform. Windows PowerShell 5.1 and PowerShell
   6.x get the PSReadLine colours only; nothing errors.
 - Linux and macOS are first-class here: the same script, the same seven flavours, at
-  `~/.config/yorumi/yorumi.ps1`, profile at `~/.config/powershell/profile.ps1`. `install.sh`
-  is only a wrapper that locates `pwsh`.
+  `${XDG_CONFIG_HOME:-$HOME/.config}/yorumi/yorumi.ps1`, with the profile entry going into
+  `$PROFILE` (`~/.config/powershell/Microsoft.PowerShell_profile.ps1` in a plain `pwsh` 7 session).
+  `install.sh` is only a wrapper that locates `pwsh`.
 - Colours are 24-bit escapes, so they look the same in Windows Terminal, VS Code, WezTerm and
   Terminal.app — pair the shell with the terminal scheme of the same flavour so the background
   matches.
@@ -130,7 +148,7 @@ the entry line itself.
 1. **Install**: `irm https://raw.githubusercontent.com/yorumicolors/powershell/main/install.ps1 | iex`
    (add the TLS 1.2 line first on Windows PowerShell 5.1).
 2. **Never paste theme code into a profile.** The port is one dot-sourced entry between
-   `# >>> yorumi >>>` and `# <<< yorumi <<<`; re-running the installer replaces it.
+   `# >>> yorumi >>>` and `# <<< yorumi <<<`; re-running the installer keeps exactly one, at the end.
 3. **Verify**: `$PSStyle.FileInfo.Directory` must be a foreground escape
    (`ESC[1m ESC[38;2;...m`) with no `44`/`48` background, and `$PSStyle.Formatting.Error`
    must be `ESC[38;2;...m`. `Get-YorumiTheme` lists the seven flavours.
